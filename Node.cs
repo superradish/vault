@@ -11,4 +11,8 @@ public class Node : MonoBehaviour
     public void Init(Block block){
         OccupiedBlock = block;
     }
+
+    void Update(){
+        this.OccupiedBlock.SetIndex(Point.fromVector(this.Pos));
+    }
 }

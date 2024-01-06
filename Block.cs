@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using DG.Tweening;
 using TMPro;
 
 public class Block : MonoBehaviour, IEventSystemHandler
 {
     public Board _board;
+    public BlockType _type;
     public int Value;
     public Node Node;
     public Point index;
     public Point newIndex;
     //public BlockType Type;
     public bool Merging;
-    public Block targetBlock;
-    public Block startBlock;
     public bool moving = false;
     public bool updating = false;    
 
@@ -39,7 +39,7 @@ public class Block : MonoBehaviour, IEventSystemHandler
     }*/
 
     void Awake(){
-        _originalPosition = transform.position;
+        //_originalPosition = transform.position;
     }
 
     public void Init(int val, Point p, Node node, Board board) {
@@ -51,6 +51,7 @@ public class Block : MonoBehaviour, IEventSystemHandler
         Pos = p.ToVector();
         //Type = type;
         Value = val;
+        this.SetBlockType(val);
         //_renderer.color = type.Color;
         _text.text = Value.ToString();
 
@@ -59,9 +60,8 @@ public class Block : MonoBehaviour, IEventSystemHandler
     }
 
     void Update(){
-       // if(updating){ _text.text = Value.ToString();}
-       // updating = false;
-        if (!startBlock) return; 
+
+        //if (!startBlock) return; 
         newIndex = Point.clone(this.index);
         Point add = Point.zero;
             Vector2 dir = ((Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition) - mouseStart);
@@ -79,15 +79,14 @@ public class Block : MonoBehaviour, IEventSystemHandler
             }
             //Debug.Log(add.ToString() + " add tostring");
             newIndex.add(add);
-            Debug.Log(newIndex.ToString() + " newindex tostring");
+            //Debug.Log(newIndex.ToString() + " newindex tostring");
     
             //Debug.Log(index.ToString() + ", " + newIndex.ToString());
 
-            MoveBlock(newIndex);
-  
-            targetBlock = GetBlockByPoint(newIndex);
+            //targetBlock = GetBlockByPoint(newIndex);
             //Debug.Log("targetblock: " + targetBlock.index.ToString());
-
+       
+        
     }
 
 
@@ -119,8 +118,14 @@ public class Block : MonoBehaviour, IEventSystemHandler
     public void SetIndex(Point p)
     {
         index = p;
-        ResetPosition();
+        //ResetPosition();
         UpdateName();
+    }
+
+    public void Kill(){
+        this._type = BlockType.blank;
+        _text.text = "X";
+
     }
 
     public string ToString(){
@@ -143,23 +148,6 @@ public class Block : MonoBehaviour, IEventSystemHandler
        transform.position = Vector2.Lerp(index.ToVector(), move, Time.deltaTime * 16f);
     }
 
-    public bool UpdateBlock()
-    {
-       /* if(Vector3.Distance(rect.anchoredPosition, Pos) > 1)
-        {
-            MovePositionTo(Pos);
-            updating = true;
-            return true;
-        }
-        else
-        {
-            rect.anchoredPosition = Pos;
-            updating = false;
-            return false;
-        }*/
-        return false;
-    }
-
     void UpdateName()
     {
         transform.name = "Node [" + index.x + ", " + index.y + "]";
@@ -167,8 +155,6 @@ public class Block : MonoBehaviour, IEventSystemHandler
 
     public void OnMouseDown()
     {
-        if(startBlock != null){ return;}
-        startBlock = this;
         mouseStart = (Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition);
         //Vector2 nDir = mouseStart.normalized;
         //Debug.Log(mouseStart + "foo, " + nDir.x.ToString() + ", " + nDir.y.ToString());
@@ -176,52 +162,56 @@ public class Block : MonoBehaviour, IEventSystemHandler
     }
 
     public void OnMouseUp(){
-
-        if (newIndex == index) return;
-        if (!startBlock) return; 
-       /* newIndex = Point.clone(this.index);
-        Point add = Point.zero;
-            Vector2 dir = ((Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition) - mouseStart);
-            //Debug.Log(mouseStart + "foo, " + dir.x.ToString() + ", " + dir.y.ToString());
-            Vector2 nDir = dir.normalized;
-            Vector2 aDir = new Vector2(Mathf.Abs(dir.x), Mathf.Abs(dir.y));
-            //Debug.Log(dir.magnitude.ToString());
-            if (dir.magnitude > .75) // magnitude controls how soon a piece begins to be dragged
-            {
-                //make add either (1, 0) | (-1, 0) | (0, 1) | (0, -1) depending on the direction of the mouse point
-                if (aDir.x > aDir.y)
-                    add = (new Point((nDir.x > 0) ? 1 : -1, 0));
-                else if(aDir.y > aDir.x)
-                    add = (new Point(0, (nDir.y > 0) ? 1 : -1));
-            }
-            //Debug.Log(add.ToString() + " add tostring");
-            newIndex.add(add);
-            //Debug.Log(newIndex.ToString() + " newindex tostring");
-    
-            //Debug.Log(index.ToString() + ", " + newIndex.ToString());
-
-            //MoveBlock(newIndex.ToVector());
-            //Debug.Log("targetblock: " + targetBlock.index.ToString());
-       // Debug.Log($"Up: {GetInstanceID()}");*/
-        if (!newIndex.Equals(this.index)){
-            _board.Swap(this, newIndex);
+        if (newIndex != this.index){
+            updating = true;
             index = Point.clone(newIndex);
             newIndex = null;
             }
-        else if (newIndex.Equals(this.index))  ResetPosition();
-        startBlock = null;
-        targetBlock = null;
+
     }
 
+    public bool UpdatePiece(){
+            if(newIndex != null)
+        {
+            updating = true;
+            return true;
+        }
+        else
+        {   
+            updating = false;
+            return false;
+        }
+    }
+    //refactor piece to block later i'm just lazy right now
+  //  [System.Serializable]
+    public enum BlockType {   
+        blank = 0,
+        bronze = 1,
+        silver = 2,
+        gold = 3,
+        bag = 4
+        
+    }
+
+    public void SetBlockType(int val)
+    {
+        this._type = (BlockType)val;
+    }
+
+   // public void setValue(int v){
+   //     value = v;
+   // }
+
+    public int Upgrade(Block p) => Value++;
+}
+
+    /* keeping this in case i need it later for falling blocks but swaps happen in the Board class
     public void MoveBlock(Point dir){
         //Debug.Log("fired in movepositionto");
         Vector2 v = dir.ToVector();
 
         transform.position = Vector2.Lerp(index.ToVector(), v, Time.deltaTime * 16f);
-
-
-    }
+    }*/
 
 
 
-}

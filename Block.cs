@@ -164,8 +164,9 @@ public class Block : MonoBehaviour, IEventSystemHandler
     public void OnMouseUp(){
         if (newIndex != this.index){
             updating = true;
-            index = Point.clone(newIndex);
-            newIndex = null;
+            Debug.Log("fired in updating");
+            _board._update.Add(Node);
+            _board._update.Add(_board.GetNodeAtPoint(newIndex));            
             }
 
     }

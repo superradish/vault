@@ -36,7 +36,6 @@ public class Board : MonoBehaviour
         Debug.Log( "second string movement: " + n1.OccupiedBlock.Pos.ToString() + "- n1, " + n2.OccupiedBlock.Pos.ToString() + " - n2");
         
         n1.OccupiedBlock.transform.parent = n1.transform;
-
         n2.OccupiedBlock.transform.parent = n2.transform;
 
         n1.OccupiedBlock.transform.DOLocalMove(Vector3.zero, 0.5f);
@@ -112,6 +111,7 @@ public void Swap(Block b, Block b2, bool move){ //yeah there's two swaps which i
     // Update is called once per frame
     void Update()
     {
+        
     }
     
 }

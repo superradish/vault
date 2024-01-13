@@ -7,10 +7,8 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
 using System.Runtime.CompilerServices;
-<<<<<<< HEAD
 using Unity.VisualScripting;
-=======
->>>>>>> 9ff8dfcd931bd71debb7d94b17d0dfdd98d2821c
+
 
 public class NewBehaviourScript : MonoBehaviour
 {
@@ -81,30 +79,16 @@ public class NewBehaviourScript : MonoBehaviour
             FlippedPieces flip = getFlipped(node);
             Node flippedPiece = null;
 
-<<<<<<< HEAD
             List<Node> connected = IsConnected(node, true);
             
             Node other = node.OccupiedBlock.Target;
             Debug.Log("fired in finishedupdating");
-=======
-            int x = (int)node.OccupiedBlock.index.x;
-            _board.fills[x] = Mathf.Clamp(_board.fills[x] - 1, 0, _width);
-
-            List<Node> connected = IsConnected(node, true);
-            bool wasFlipped = (flip != null);
-
->>>>>>> 9ff8dfcd931bd71debb7d94b17d0dfdd98d2821c
             if (wasFlipped) //If we flipped to make this update
             {
                 Debug.Log("fired in wasflipped");
                 flippedPiece = flip.getOtherPiece(node);
-<<<<<<< HEAD
                 AddPoints(ref connected, IsConnected(other, true));
           
-=======
-                AddPoints(ref connected, IsConnected(flippedPiece, true));
-                _board.Swap(node.OccupiedBlock, flippedPiece.OccupiedBlock, true);
->>>>>>> 9ff8dfcd931bd71debb7d94b17d0dfdd98d2821c
             }
 
               if (connected.Count == 0) //If we didn't make a match
@@ -168,31 +152,8 @@ public class NewBehaviourScript : MonoBehaviour
     }
     
 
-<<<<<<< HEAD
     private FlippedPieces getFlipped(Node node)
     {
-=======
-    private void AddPoints(ref List<Node> connected, List<Node> nodes)
-    {
-        foreach(Node p in nodes)
-        {
-            bool doAdd = true;
-            for(int i = 0; i < connected.Count; i++)
-            {
-                if(connected[i].Equals(p))
-                {
-                    doAdd = false;
-                    break;
-                }
-            }
-            if (doAdd) connected.Add(p);
-        }
-    }
-    
-
-    private FlippedPieces getFlipped(Node node)
-    {
->>>>>>> 9ff8dfcd931bd71debb7d94b17d0dfdd98d2821c
         FlippedPieces flip = null;
         for (int i = 0; i < _board._flipped.Count; i++)
         {
@@ -363,17 +324,10 @@ public class NewBehaviourScript : MonoBehaviour
         int val = p.OccupiedBlock.Value;
 
         Point[] directions;  directions = new Point[]{
-<<<<<<< HEAD
             Point.down,
             Point.left,
             Point.up,
             Point.right
-=======
-            Point.up,
-            Point.right,
-            Point.down,
-            Point.left
->>>>>>> 9ff8dfcd931bd71debb7d94b17d0dfdd98d2821c
             };
        
         //Debug.Log("checking value: " + p.OccupiedBlock.Value.ToString() + ", " + p.OccupiedBlock.index.x.ToString() + ", " + p.OccupiedBlock.index.y.ToString());
@@ -425,32 +379,6 @@ public class NewBehaviourScript : MonoBehaviour
                 AddPoints(ref connected, line);
         }
 
-<<<<<<< HEAD
-=======
-        for(int i = 0; i < 4; i++) //Check for a 2x2
-        {
-            List<Node> square = new List<Node>();
-
-            int same = 0;
-            int next = i + 1;
-            if (next >= 4)
-                next -= 4;
-
-            Point[] check = { Point.add(p.OccupiedBlock.index, directions[i]), Point.add(p.OccupiedBlock.index, directions[next]), Point.add(p.OccupiedBlock.index, Point.add(directions[i], directions[next])) };
-            foreach (Point pnt in check) //Check all sides of the piece, if they are the same value, add them to the list
-            {
-                if (getNodeAtPoint(pnt).OccupiedBlock.Value  == val)
-                {
-                    square.Add(getNodeAtPoint(pnt));
-                    same++;
-                }
-            }
-
-            if (same > 2)
-                AddPoints(ref connected, square);
-        }
-
->>>>>>> 9ff8dfcd931bd71debb7d94b17d0dfdd98d2821c
         if(main) //Checks for other matches along the current match
         {
             for (int i = 0; i < connected.Count; i++)

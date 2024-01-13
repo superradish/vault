@@ -157,7 +157,6 @@ public class Block : MonoBehaviour, IEventSystemHandler, IPointerDownHandler, IP
     }
 
     public void OnMouseUp(){
-<<<<<<< HEAD
 
           newIndex = Point.clone(this.index);
           oldIndex = Point.clone(this.index);
@@ -193,13 +192,6 @@ public class Block : MonoBehaviour, IEventSystemHandler, IPointerDownHandler, IP
             
             //this.UpdatePiece();
 
-=======
-        if (newIndex != this.index){
-            updating = true;
-            Debug.Log("fired in updating");
-            _board._update.Add(Node);
-            _board._update.Add(_board.GetNodeAtPoint(newIndex));            
->>>>>>> 9ff8dfcd931bd71debb7d94b17d0dfdd98d2821c
             }
 
     }

@@ -16,8 +16,42 @@ public class Board : MonoBehaviour
     public List<FlippedPieces> _flipped;
     public List<Block> _blocks;
     public Node[,] _board;
+<<<<<<< HEAD
     public List<Node> _lastMoved;
     
+=======
+    public List<Block> _lastMoved;
+
+    public void Swap(Block b, Point dir, bool move){
+        
+        var n1 = _board[b.index.x, b.index.y];
+        var n2 = _board[dir.x, dir.y];
+        //Node n1n = n1.Node;
+        //Node n2n = n2.Node;
+
+        Debug.Log( "first string movement: " + n1.OccupiedBlock.Pos.ToString() + "- n1, " + n2.OccupiedBlock.Pos.ToString() + " - n2");
+
+        n1.OccupiedBlock = n2.OccupiedBlock;
+        n2.OccupiedBlock = b;
+
+        _lastMoved.Add(n1.OccupiedBlock);
+        _lastMoved.Add(n2.OccupiedBlock);
+
+        Debug.Log( "second string movement: " + n1.OccupiedBlock.Pos.ToString() + "- n1, " + n2.OccupiedBlock.Pos.ToString() + " - n2");
+        
+        n1.OccupiedBlock.transform.parent = n1.transform;
+        n2.OccupiedBlock.transform.parent = n2.transform;
+
+        n1.OccupiedBlock.transform.DOLocalMove(Vector3.zero, 0.5f);
+        n2.OccupiedBlock.transform.DOLocalMove(Vector3.zero, 0.5f);
+
+        n1.OccupiedBlock.SetIndex(n1.OccupiedBlock.index);        
+        n2.OccupiedBlock.SetIndex(n2.OccupiedBlock.index);
+
+        //n1.OccupiedBlock.MoveBlock(n1.OccupiedBlock.newIndex);
+        //n2.OccupiedBlock.MoveBlock(n1.OccupiedBlock.index);
+    }
+>>>>>>> 9ff8dfcd931bd71debb7d94b17d0dfdd98d2821c
 
     public void Kill(Node victim){
         victim.OccupiedBlock.Kill();
@@ -165,11 +199,14 @@ public void FlipPieces(Block b, Point p, bool move){
     void Update()
     {
         
+<<<<<<< HEAD
     }
 
     internal List<Node> GetLastMoved()
     {
         return this._lastMoved;
+=======
+>>>>>>> 9ff8dfcd931bd71debb7d94b17d0dfdd98d2821c
     }
 }
 

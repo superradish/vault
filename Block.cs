@@ -5,20 +5,25 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using DG.Tweening;
 using TMPro;
+using System.Linq;
+using JetBrains.Annotations;
 
-public class Block : MonoBehaviour, IEventSystemHandler
+public class Block : MonoBehaviour, IEventSystemHandler, IPointerDownHandler, IPointerUpHandler
 {
     public Board _board;
     public BlockType _type;
     public int Value;
     public Node Node;
+    public Node Target;
     public Point index;
+    public Point oldIndex;
     public Point newIndex;
     //public BlockType Type;
     public bool Merging;
     public bool moving = false;
     public bool updating = false;    
 
+    public GameObject block;
 
     Image img;
 
@@ -48,6 +53,7 @@ public class Block : MonoBehaviour, IEventSystemHandler
         img = GetComponent<Image>();
         rect = GetComponent<BoxCollider2D>();
         node.OccupiedBlock = this;
+        Target = null;
         Pos = p.ToVector();
         //Type = type;
         Value = val;
@@ -62,23 +68,8 @@ public class Block : MonoBehaviour, IEventSystemHandler
     void Update(){
 
         //if (!startBlock) return; 
-        newIndex = Point.clone(this.index);
-        Point add = Point.zero;
-            Vector2 dir = ((Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition) - mouseStart);
-            //Debug.Log(mouseStart + "foo, " + dir.x.ToString() + ", " + dir.y.ToString());
-            Vector2 nDir = dir.normalized;
-            Vector2 aDir = new Vector2(Mathf.Abs(dir.x), Mathf.Abs(dir.y));
-            //Debug.Log(dir.magnitude.ToString());
-            if (dir.magnitude > .75) // magnitude controls how soon a piece begins to be dragged
-            {
-                //make add either (1, 0) | (-1, 0) | (0, 1) | (0, -1) depending on the direction of the mouse point
-                if (aDir.x > aDir.y)
-                    add = (new Point((nDir.x > 0) ? 1 : -1, 0));
-                else if(aDir.y > aDir.x)
-                    add = (new Point(0, (nDir.y > 0) ? 1 : -1));
-            }
-            //Debug.Log(add.ToString() + " add tostring");
-            newIndex.add(add);
+        
+
             //Debug.Log(newIndex.ToString() + " newindex tostring");
     
             //Debug.Log(index.ToString() + ", " + newIndex.ToString());
@@ -117,6 +108,7 @@ public class Block : MonoBehaviour, IEventSystemHandler
 
     public void SetIndex(Point p)
     {
+        oldIndex = index;
         index = p;
         //ResetPosition();
         UpdateName();
@@ -128,8 +120,8 @@ public class Block : MonoBehaviour, IEventSystemHandler
 
     }
 
-    public string ToString(){
-        return Value.ToString();
+    public override string ToString(){
+        return new string("value:" + Value.ToString() + ", " + index.x.ToString() + ", " + index.y.ToString());
     }
 
     public void ResetPosition()
@@ -155,17 +147,51 @@ public class Block : MonoBehaviour, IEventSystemHandler
 
     public void OnMouseDown()
     {
-        mouseStart = (Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Debug.Log("dropped in movepieces " + this.Node.name);
+        if (updating) return;
+        MovePieces.instance.MovePiece(Node);
+        //mouseStart = (Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition);
         //Vector2 nDir = mouseStart.normalized;
         //Debug.Log(mouseStart + "foo, " + nDir.x.ToString() + ", " + nDir.y.ToString());
         //Debug.Log($"Down: {GetInstanceID()}");
     }
 
     public void OnMouseUp(){
-        if (newIndex != this.index){
-            updating = true;
-            index = Point.clone(newIndex);
-            newIndex = null;
+
+          newIndex = Point.clone(this.index);
+          oldIndex = Point.clone(this.index);
+        _board._update.Add(this.Node);
+        Point add = Point.zero;
+            Vector2 dir = ((Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition) - mouseStart);
+            //Debug.Log(mouseStart + "foo, " + dir.x.ToString() + ", " + dir.y.ToString());
+            Vector2 nDir = dir.normalized;
+            Vector2 aDir = new Vector2(Mathf.Abs(dir.x), Mathf.Abs(dir.y));
+            //Debug.Log(dir.magnitude.ToString());
+            if (dir.magnitude > .75) // magnitude controls how soon a piece begins to be dragged
+            {
+            if (!this.updating){
+            this.updating = true;
+            }
+                //make add either (1, 0) | (-1, 0) | (0, 1) | (0, -1) depending on the direction of the mouse point
+                if (aDir.x > aDir.y)
+                    add = (new Point((nDir.x > 0) ? 1 : -1, 0));
+                else if(aDir.y > aDir.x)
+                    add = (new Point(0, (nDir.y > 0) ? 1 : -1));
+            
+            //Debug.Log(add.ToString() + " add tostring");
+            newIndex.add(add);
+            this.Target = _board.GetNodeAtPoint(newIndex);
+            Target.OccupiedBlock.Target = this.Node;
+                        Debug.Log("fired in updating");
+                       _board._update.Add(this.Target);
+            newIndex = null; 
+           // if(this.updating == true){
+ 
+            //MoveBlock(Target.OccupiedBlock.index);
+            //Target.OccupiedBlock.MoveBlock(oldIndex);
+            
+            //this.UpdatePiece();
+
             }
 
     }
@@ -196,22 +222,35 @@ public class Block : MonoBehaviour, IEventSystemHandler
     public void SetBlockType(int val)
     {
         this._type = (BlockType)val;
+        this.Value = val;
+        this._text.text = val.ToString();
     }
 
    // public void setValue(int v){
    //     value = v;
    // }
 
-    public int Upgrade(Block p) => Value++;
-}
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        Debug.Log("dropped in movepieces");
+        if (updating) return;
+        MovePieces.instance.MovePiece(this.Node);
+    }
+    
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        MovePieces.instance.DropPiece();
+    }
 
-    /* keeping this in case i need it later for falling blocks but swaps happen in the Board class
     public void MoveBlock(Point dir){
         //Debug.Log("fired in movepositionto");
         Vector2 v = dir.ToVector();
 
         transform.position = Vector2.Lerp(index.ToVector(), v, Time.deltaTime * 16f);
-    }*/
+    }
+
+    public int Upgrade(Block p) => Value++;
+}
 
 
 

@@ -13,6 +13,9 @@ public class Node : MonoBehaviour
     }
 
     void Update(){
-        this.OccupiedBlock.SetIndex(Point.fromVector(this.Pos));
+    this.OccupiedBlock.SetIndex(Point.fromVector(this.Pos));
+    this.OccupiedBlock.SetBlockType(Value);
     }
+
+    
 }

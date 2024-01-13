@@ -6,16 +6,18 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
+using System.Runtime.CompilerServices;
+using Unity.VisualScripting;
 
-public class NewBehaviourScript : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+public class NewBehaviourScript : MonoBehaviour
 {
     [SerializeField] private int _width = 8;
     [SerializeField] private int _height = 8;
     [SerializeField] private Node _nodePrefab;
     [SerializeField] private Block _blockPrefab;
-    [SerializeField] private SpriteRenderer _boardPrefab;
+    [SerializeField] private SpriteRenderer _spritePrefab;
     //[SerializeField] private List<BlockType> _types;
-
+    [SerializeField] private Board _boardPrefab;
     public ArrayLayout boardLayout;
 
     System.Random random;
@@ -37,123 +39,157 @@ public class NewBehaviourScript : MonoBehaviour, IPointerDownHandler, IPointerUp
 
     void Update(){
         int count = 0;
+        bool wasFlipped = false;  
+
+        // _board._update = IsConnected(getNodeAtPoint(Point.zero), true);
+
+          /* if(_board._update.Count > 0){
+            wasFlipped = true;
+            _board.Swap(_board._update[0].OccupiedBlock, _board._update[1].OccupiedBlock, true); //****old test code;}
+            //load the updated pieces into Moved for later
+            for(int i = 0; i < _board._update.Count; i++){
+                _board._lastMoved.Add(_board._update[i]);
+                 Debug.Log("I updated last at " + _board._update[i].OccupiedBlock.ToString());
+                _board._update[i].OccupiedBlock.updating = false; // done updating, we use lastmoved to reference the previously moved blocks and oldIndex to refer to their locations
+            }
+          //  _board._update = _board.FindConnected(_board._lastMoved[0]);
             
-            //foreach(Block b in _board._lastMoved){  //****old test code
+            _board._update = new List<Node>(); //clean the update list, we moved - now we check for connections
+            }
+
+  
+
+           /* foreach(Node n in _board._lastMoved){
+                Debug.Log("I moved last at " + n.OccupiedBlock.ToString());
+            }
+            _board._lastMoved = new List<Node>();*/
+
             //Debug.Log("this should fire twice for each move");
             //check for connections for each block and add to a list of connected if they are
             //Point p = b.index;
 
-            //new code here
-             List<Node> finishedUpdating = new List<Node>();
-            for(int i = 0; i < _board._update.Count; i++)
-            {
-            Node node = _board._update[i];
-            if (!node.OccupiedBlock.UpdatePiece()) finishedUpdating.Add(node);
-            }
+            
+            List<Node> finishedUpdating = _board.GetLastMoved();
+            
         for (int i = 0; i < finishedUpdating.Count; i++)
                 {
+            
             Node node = finishedUpdating[i];
             FlippedPieces flip = getFlipped(node);
             Node flippedPiece = null;
 
-            int x = (int)node.OccupiedBlock.index.x;
-            _board.fills[x] = Mathf.Clamp(_board.fills[x] - 1, 0, _width);
-
-            List<Node> connected = isConnected(node, true);
-            bool wasFlipped = (flip != null);
-
+            List<Node> connected = IsConnected(node, true);
+            
+            Node other = node.OccupiedBlock.Target;
+            Debug.Log("fired in finishedupdating");
             if (wasFlipped) //If we flipped to make this update
             {
+                Debug.Log("fired in wasflipped");
                 flippedPiece = flip.getOtherPiece(node);
-                AddPoints(ref connected, isConnected(flippedPiece, true));
-                _board.Swap(node.OccupiedBlock, node.OccupiedBlock.newIndex, true);
+                AddPoints(ref connected, IsConnected(other, true));
+          
             }
 
               if (connected.Count == 0) //If we didn't make a match
             {
+                Debug.Log("fired in wasflipped but flip back");
                 if (wasFlipped) //If we flipped
-                    _board.Swap(node.OccupiedBlock, flippedPiece.OccupiedBlock, false); //Flip back
+                    _board.FlipPieces(node.OccupiedBlock, other.OccupiedBlock.index, false); //Flip back
             }
             else //If we made a match
-            {
-                
-                foreach (Node pnt in connected) //Remove the node pieces connected
-                
-            {   //inside here is where we put the upgrade code
-         
-                    _board.Kill(pnt);
+            {               
+                foreach (Node pnt in connected) //Remove the node pieces connected         
+                {   //inside here is where we put the upgrade code
+
                     Node n = pnt;
                     Block block = node.OccupiedBlock;
                     if (block != null)
                     {
-                    if(block.updating){
-                    //int newValue = node.Upgrade(nodePiece);   //this fires for each piece in the connected array, we only want to move the one that was moved, if there was one moved
-                    //Node newNode = new Node(newValue, pnt);  //can't set up new nodes or else we'll have nodes on top of nodes and stuff stops working
+                        if(block.updating){
+                    //Debug.Log("Kill " + pnt.ToString());
+                    //_board.Kill(pnt);
+                    
+                        //int newValue = node.Upgrade(nodePiece);   //this fires for each piece in the connected array, we only want to move the one that was moved, if there was one moved
+                        //Node newNode = new Node(newValue, pnt);  //can't set up new nodes or else we'll have nodes on top of nodes and stuff stops working
 
-                    }
-                    else{block.gameObject.SetActive(false);
-                    //    _board._dead.Add(nodePiece);
-                    Debug.Log("Dead fired");
-                    node.OccupiedBlock.SetBlockType(0);
-                    }
+                        }
+                        else{block.gameObject.SetActive(false);
+                        //    _board._dead.Add(nodePiece);
+                        //Debug.Log("Dead fired");
+                        node.OccupiedBlock.SetBlockType(0);
+                        block.updating = false;
+                        }
+                        
                     }
                 }
-
-            if(count >= 2){ //we only check the counter once per moved
-            _board._lastMoved = new List<Block>();
-           
-                } //cleans the list after every update
             }
+            
+            
+            
+    }
+     //cleans the list after every update
+            
+    }        
+
+    
+
+    private void AddPoints(ref List<Node> connected, List<Node> nodes)
+    {
+        foreach(Node p in nodes)
+        {
+            bool doAdd = true;
+            for(int i = 0; i < connected.Count; i++)
+            {
+                if(connected[i].Equals(p))
+                {
+                    doAdd = false;
+                    break;
+                }
+            }
+            if (doAdd) connected.Add(p);
         }
     }
+    
 
-    
-    
-    
-    
-    public void OnPointerDown(PointerEventData eventData){
-        int i = eventData.clickCount;
-        Debug.Log(i);
-     //   if (updating) return;
-    }
-     
-    public void OnPointerUp(PointerEventData eventData)
+    private FlippedPieces getFlipped(Node node)
     {
-      //  MovePieces.instance.DropPiece();
-      Debug.Log("up");
-
-    }
+        FlippedPieces flip = null;
+        for (int i = 0; i < _board._flipped.Count; i++)
+        {
+            if (_board._flipped[i].getOtherPiece(node) != null)
+            {
+                flip = _board._flipped[i];
+                break;
+            }
+        }
+        return flip;
+        }
     // Update is called once per frame
     void GenerateGrid()
-    {
-        _board = new Board();
+    {   
         var center = new Vector2((float) _width / 2 - .5f,(float) _height / 2 - .5f );
-        var boardSprite = Instantiate(_boardPrefab, center, Quaternion.identity);
+        _board = Instantiate(_boardPrefab, center, Quaternion.identity);
+        var boardSprite = _board.GetComponent<SpriteRenderer>();
         boardSprite.size = new Vector2(_width, _height);
         _board._board = new Node[_width, _height];
         _board._update = new List<Node>();
         _board._nodes = new List<Node>();
         _board._blocks = new List<Block>();
-        _board._lastMoved = new List<Block>();
+        _board._lastMoved = new List<Node>();
         for (int x = 0; x < _width; x++){
             for (int y = 0; y < _height; y++) {
                 Node node = Instantiate(_nodePrefab, new Vector2(x, y), Quaternion.identity);
                 _board._nodes.Add(node);
                 Block block = Instantiate(_blockPrefab, node.Pos, Quaternion.identity);
-                block.Init(fillPieceWithRandom(), Point.fromVector(node.Pos), _board.GetNodeAtPosition(node.Pos), _board);
-                _board._board[x, y] = _board.GetNodeAtPosition(node.Pos);        
+                block.Init(fillPieceWithRandom(), Point.fromVector(node.Pos), GetNodeAtPosition(node.Pos), _board);
+                _board._board[x, y] = GetNodeAtPosition(node.Pos);        
 
 
                 //block.SetBlock(node); 
                 _board._blocks.Add(block);
             }
         }
-
-
-
-
         Camera.main.transform.position = new Vector3(center.x, center.y, -5);
-
         //SpawnBlocks(_width * _height);
     }
     
@@ -163,23 +199,35 @@ public class NewBehaviourScript : MonoBehaviour, IPointerDownHandler, IPointerUp
             for (int y = 0; y < _height; y++)
                 {
                     Point p = new Point(x, y);
-                    int val = _board.GetNodeAtPoint(p).OccupiedBlock.Value;
-                    Node n = _board.GetNodeAtPoint(p);
+                    int val = getNodeAtPoint(p).OccupiedBlock.Value;
+                    Node n = getNodeAtPoint(p);
                     if (val <= 0) continue;
                     int counter = 0;
                     remove = new List<int>();
-                    if (isConnected(n, true).Count > 0)
+                    if (IsConnected(n, true).Count > 0)
                     {
                         val = n.OccupiedBlock.Value;
                         counter++; //bust out of this loop if it makes an impossible grid. it does happen.
                         if (!remove.Contains(val))
                             remove.Add(val);
-                        setValueAtPoint(p, replacePieceWithRandom(val));
+                        setValueAtPoint(p, replacePieceWithRandom(newValue(ref remove)));
                     }
                 }
             }
     }
     
+    int newValue(ref List<int> remove)
+    {
+        List<int> available = new List<int>();
+        for (int i = 0; i < pieces.Length; i++)
+            available.Add(i + 1);
+        foreach (int i in remove)
+            available.Remove(i);
+
+        if (available.Count <= 0) return 0;
+        return available[random.Next(0, available.Count)];
+    }
+
 
     /*void SpawnBlocks(int amount){
         var freeNodes = _nodes.Where(n=>n.OccupiedBlock == null).OrderBy(b=>Random.value).ToList();
@@ -191,24 +239,6 @@ public class NewBehaviourScript : MonoBehaviour, IPointerDownHandler, IPointerUp
             _blocks.Add(block);
         }
     }*/
-
-        void AddPoints(ref List<Point> points, List<Point> add)
-    {
-        foreach(Point p in add)
-        {
-            bool doAdd = true;
-            for(int i = 0; i < points.Count; i++)
-            {
-                if(points[i].Equals(p))
-                {
-                    doAdd = false;
-                    break;
-                }
-            }
-
-            if (doAdd) points.Add(p);
-        }
-    }
 
 
     Node GetNodeAtPosition(Vector2 pos) {
@@ -260,11 +290,17 @@ public class NewBehaviourScript : MonoBehaviour, IPointerDownHandler, IPointerUp
     void setValueAtPoint(Point p, int v)
     {
         _board._board[p.x, p.y].OccupiedBlock.Value = v;
-        _board._board[p.x, p.y].OccupiedBlock.updating = true;
+        _board._board[p.x, p.y].OccupiedBlock.updating = false;
+        _board._board[p.x, p.y].OccupiedBlock.SetBlockType(v);
     }
 
     Node getNodeAtPoint(Point p)
     {
+        if(p.x < 0){p.x = 0;};
+        if(p.y < 0){p.y = 0;};
+        if(p.x > _width - 1){p.x = _width - 1;};
+        if(p.y > _height - 1){p.y = _height - 1;};
+        
         return _board._board[p.x, p.y];
     }
 
@@ -276,48 +312,32 @@ public class NewBehaviourScript : MonoBehaviour, IPointerDownHandler, IPointerUp
     }
 
 
-
-    int newValue(ref List<int> remove)
-    {
-        List<int> available = new List<int>();
-        for (int i = 0; i < pieces.Length; i++)
-            available.Add(i + 1);
-        foreach (int i in remove)
-            available.Remove(i);
-
-        if (available.Count <= 0) return 0;
-        return available[random.Next(0, available.Count)];
-    }
-
-
     public void RemoveBlock(Block block) {
         _board._blocks.Remove(block);
         Destroy(block.gameObject);
     }
 
-    public List<Node> isConnected(Node p, bool main)
+    public List<Node> IsConnected(Node p, bool main)
     {
         List<Node> connected = new List<Node>();
         int val = p.OccupiedBlock.Value;
-        Debug.Log("checking value: " + p.OccupiedBlock.Value.ToString());
-        Point[] directions =
-        {
-            Point.up,
-            Point.right,
+
+        Point[] directions;  directions = new Point[]{
             Point.down,
-            Point.left
-        };
-        
+            Point.left,
+            Point.up,
+            Point.right
+            };
+       
+        //Debug.Log("checking value: " + p.OccupiedBlock.Value.ToString() + ", " + p.OccupiedBlock.index.x.ToString() + ", " + p.OccupiedBlock.index.y.ToString());
+
         foreach(Point dir in directions) //Checking if there is 2 or more same shapes in the directions
         {
-            bool skip = false;
+            
             int same = 0;
             List<Node> line = new List<Node>();
-            if(dir.x < 0 || dir.y < 0){
-                skip = true;}
             
-            if(!skip){
-        Debug.Log("checking point here dir " + p.ToString());
+        //Debug.Log("checking point here dir " + dir.x.ToString() + ", " + dir.y.ToString()) ;
             
             
             for(int i = 0; i < 3; i++)
@@ -325,14 +345,16 @@ public class NewBehaviourScript : MonoBehaviour, IPointerDownHandler, IPointerUp
                 
                 Point check = Point.add(p.OccupiedBlock.index, Point.mult(dir, i));
 
-                if(_board.GetNodeAtPoint(check).OccupiedBlock.Value == val)
+               
+                if(getNodeAtPoint(check).OccupiedBlock.Value == val)
                 {
-                    line.Add(_board.GetNodeAtPoint(check));
+                    line.Add(getNodeAtPoint(check));
                     same++;
                 }
-            }}
-
+            }
+            
             if (same > 1) //If there are more than 1 of the same shape in the direction then we know it is a match
+            Debug.Log("match found");
                 AddPoints(ref connected, line); //Add these points to the overarching connected list
         }
 
@@ -344,8 +366,8 @@ public class NewBehaviourScript : MonoBehaviour, IPointerDownHandler, IPointerUp
             Point[] check = { Point.add(p.OccupiedBlock.index, directions[i]), Point.add(p.OccupiedBlock.index, directions[i + 2]) };
             foreach (Point next in check) //Check both sides of the piece, if they are the same value, add them to the list
             {
-                Debug.Log("debug value " + _board.GetNodeAtPoint(next).OccupiedBlock.Value.ToString());
-                if (_board.GetNodeAtPoint(next).OccupiedBlock.Value == val)
+                //Debug.Log("debug value " + getNodeAtPoint(next).OccupiedBlock.Value.ToString());
+                if (getNodeAtPoint(next).OccupiedBlock.Value == val)
                 {
                     line.Add(_board.GetNodeAtPoint(next));
                     same++;
@@ -356,74 +378,21 @@ public class NewBehaviourScript : MonoBehaviour, IPointerDownHandler, IPointerUp
                 AddPoints(ref connected, line);
         }
 
-        for(int i = 0; i < 4; i++) //Check for a 2x2
-        {
-            List<Node> square = new List<Node>();
-
-            int same = 0;
-            int next = i + 1;
-            if (next >= 4)
-                next -= 4;
-
-            Point[] check = { Point.add(p.OccupiedBlock.index, directions[i]), Point.add(p.OccupiedBlock.index, directions[next]), Point.add(p.OccupiedBlock.index, Point.add(directions[i], directions[next])) };
-            foreach (Point pnt in check) //Check all sides of the piece, if they are the same value, add them to the list
-            {
-                if (_board.GetNodeAtPoint(pnt).OccupiedBlock.Value  == val)
-                {
-                    square.Add(_board.GetNodeAtPoint(pnt));
-                    same++;
-                }
-            }
-
-            if (same > 2)
-                AddPoints(ref connected, square);
-        }
-
         if(main) //Checks for other matches along the current match
         {
             for (int i = 0; i < connected.Count; i++)
-                AddPoints(ref connected, isConnected(connected[i], false));
+                AddPoints(ref connected, IsConnected(connected[i], false));
         }
 
 
         return connected;
     }
 
-void AddPoints(ref List<Node> points, List<Node> add)
-    {
-        foreach(Node p in add)
-        {
-            bool doAdd = true;
-            for(int i = 0; i < points.Count; i++)
-            {
-                if(points[i].Equals(p))
-                {
-                    doAdd = false;
-                    break;
-                }
-            }
-
-            if (doAdd) points.Add(p);
-        }
     }
 
-FlippedPieces getFlipped(Node n)
-    {
-        FlippedPieces flip = null;
-        for (int i = 0; i < _board._flipped.Count; i++)
-        {
-            if (_board._flipped[i].getOtherPiece(n) != null)
-            {
-                flip = _board._flipped[i];
-                break;
-            }
-        }
-        return flip;
-}
 
 
-}
-
+    
 /*private void ChangeState(GameState newState){
     _state = newState;
     case GameState.GenerateLevel:
@@ -433,6 +402,19 @@ FlippedPieces getFlipped(Node n)
 
 }*/
 
+
+
+
+
+
+public enum GameState {
+    GenerateLevel,
+    VerifyBoard,
+    WaitingInput,
+    Moving,
+    Win,
+    Lose
+}
 
 
 [System.Serializable]
@@ -456,15 +438,4 @@ public class FlippedPieces
             return null;
     }
 }
-
-
-public enum GameState {
-    GenerateLevel,
-    VerifyBoard,
-    WaitingInput,
-    Moving,
-    Win,
-    Lose
-}
-
 
